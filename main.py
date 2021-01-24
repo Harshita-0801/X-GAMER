@@ -1,3 +1,4 @@
+#new
 import pygame as p
 import sys
 import random
@@ -11,7 +12,7 @@ def draw_floor():
     screen.blit(floor_surface, (floor_x_pos + 476, 560))
 
 
-def create_pipe():
+def create_pipe(pipe_height):
     random_pipe = random.choice(pipe_height)
     bottom_pipe = pipe_surface.get_rect(midtop=(600, random_pipe))
     top_pipe = pipe_surface.get_rect(midbottom=(600, random_pipe - 230))
@@ -161,7 +162,7 @@ def pause(game_state, x):
 p.mixer.pre_init(frequency=44100, size=16, channels=1, buffer=512)
 p.init()
 
-main_screen = p.display.set_mode((700, 500))
+main_screen = p.display.set_mode((500, 500))
 p.display.set_caption("X-GAMER!")
 clock = p.time.Clock()
 game_font = p.font.Font('04B_19.ttf', 30)
@@ -208,16 +209,16 @@ score_sound = p.mixer.Sound('sound/sfx_point.wav')
 
 
 def player(x, y):
-    window.blit(player_img, (x, y))
+    window.blit(player_img, (int(x), int(y)))
 
 
 def enemy(x, y, i):
-    window.blit(enemy_img[i], (x, y))
+    window.blit(enemy_img[i], (int(x), int(y)))
 
 
 def bullet(x, y):
     global bullet_imgX
-    window.blit(bullet_img, (x + 16.5, y + 10))
+    window.blit(bullet_img, (int(x + 16.5), int(y + 10)))
 
 
 def collision(ex, ey, bx, by):
@@ -283,7 +284,7 @@ enemy_imgX = []
 enemy_imgY = []
 enemy_imgX_change = []
 enemy_imgY_change = []
-enemies = 3
+enemies = 4
 for i in range(enemies):
     enemy_img.append(p.image.load('assets/ufo.png'))
     enemy_imgX.append(random.randint(0, 636))
@@ -345,14 +346,14 @@ m_high_score_val = 0
 
 
 def draw_fruit():
-    m_fruit_rect = p.Rect(m_cell_x * m_cell_size, m_cell_y * m_cell_size, m_cell_size, m_cell_size)
-    p.draw.rect(window, (238, 130, 238), m_fruit_rect)
+    m_fruit_rect = p.Rect(int(m_cell_x * m_cell_size), int(m_cell_y * m_cell_size), m_cell_size, m_cell_size)
+    p.draw.rect(window, (238, 130, 238), m_fruit_rect) #(surface,color,rect to be placed)
     p.draw.rect(window, (0, 0, 0), m_fruit_rect, 2)
 
 
 def draw_snake():
     for i in m_snake_position:
-        m_snake_rect = p.Rect(i.x * m_cell_size, i.y * m_cell_size, m_cell_size, m_cell_size)
+        m_snake_rect = p.Rect(int(i.x * m_cell_size), int(i.y * m_cell_size), m_cell_size, m_cell_size)
         p.draw.rect(window, (219, 112, 147), m_snake_rect)
         p.draw.rect(window, (0, 0, 0), m_snake_rect, 2)
 
@@ -432,7 +433,7 @@ while True:
                                 break
 
                         if event.type == SPAWNPIPE:
-                            pipe_list.extend(create_pipe())
+                            pipe_list.extend(create_pipe(pipe_height))
 
                         if event.type == BIRDFLAP:
                             bird_index = (bird_index + 1) % 3
@@ -444,7 +445,7 @@ while True:
                         # Bird movement
                         bird_move += gravity
                         rotated_bird = rotate_bird(bird_surface)
-                        bird_rect.centery += bird_move
+                        bird_rect.centery = int(bird_rect.centery+bird_move)
                         screen.blit(rotated_bird, bird_rect)
                         game_active = check_collisions(pipe_list)
 
@@ -478,6 +479,7 @@ while True:
                 mixer.music.play()
                 p.mixer.music.set_volume(100)
                 i_clock = p.time.Clock()
+
                 run = True
                 while run:
                     for event in p.event.get():
@@ -500,23 +502,23 @@ while True:
                                 i_enemies = True
                                 score_val = 0
 
-                            if i_game_active:
-                                if event.type == p.KEYDOWN:
-                                    if event.key == p.K_LEFT:
-                                        player_imgX_change = -1.5
-                                    if event.key == p.K_RIGHT:
-                                        player_imgX_change = +1.5
-                                    if event.key == p.K_SPACE:
-                                        bullet_sound = mixer.Sound('sound/bullet-sound.wav')
-                                        bullet_sound.play()
-                                        bullet_state = "fire"
-                                        bullet_imgX = player_imgX
-                                    if event.key == p.K_z:
-                                        pause('paused', 2)
+                        if i_game_active:
+                            if event.type == p.KEYDOWN:
+                                if event.key == p.K_LEFT:
+                                    player_imgX_change = -3.0
+                                if event.key == p.K_RIGHT:
+                                    player_imgX_change = +3.0
+                                if event.key == p.K_SPACE:
+                                    bullet_sound = mixer.Sound('sound/bullet-sound.wav')
+                                    bullet_sound.play()
+                                    bullet_state = "fire"
+                                    bullet_imgX = player_imgX
+                                if event.key == p.K_z:
+                                    pause('paused', 2)
 
-                                    if event.type == p.KEYUP:
-                                        if event.key == p.K_LEFT or event.key == p.K_RIGHT:
-                                            player_imgX_change = 0
+                            if event.type == p.KEYUP:
+                                if event.key == p.K_LEFT or event.key == p.K_RIGHT:
+                                    player_imgX_change = 0
 
                     i_bg_image = p.image.load('assets/bg1.png')
                     i_bg_imageX = 0
@@ -600,7 +602,7 @@ while True:
                 m_icon_img = p.image.load('assets/snake_icon.jpeg')  # icon of the game window
                 p.display.set_icon(m_icon_img)
                 m_snake_clock = p.time.Clock()
-                SCREEN_UPDATE = p.USEREVENT
+                SCREEN_UPDATE =p.USEREVENT
                 p.time.set_timer(SCREEN_UPDATE, 100)
 
                 run = True
@@ -610,9 +612,9 @@ while True:
                         if event.type == p.QUIT:
                             run = False
 
-                        if event.type == p.USEREVENT:
-                            m_snake_position_copy = m_snake_position[:-1]
-                            m_snake_position_copy.insert(0, m_snake_position_copy[0] + m_direction)
+                        if event.type == p.USEREVENT and m_game_active:
+                            m_snake_position_copy = m_snake_position[:-1]#slicing and eliminating last element
+                            m_snake_position_copy.insert(0, m_snake_position_copy[0] + m_direction) #(index,value)
                             m_snake_position = m_snake_position_copy[:]
                         if event.type == p.KEYDOWN:
                             if event.key == p.K_UP:
