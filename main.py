@@ -1,9 +1,58 @@
-#new
 import pygame as p
 import sys
 import random
 import math
+import time
 from pygame import mixer
+
+# initialise mixer
+p.mixer.pre_init(44100, -16, 1, 512)
+p.init()
+
+
+# main screen
+main_screen = p.display.set_mode((500, 500))
+p.display.set_caption("X-GAMER!")
+clock = p.time.Clock()
+game_font = p.font.Font('04B_19.ttf', 30)
+
+
+# flappy bird global variables
+gravity = 0.25
+bird_move = 0
+game_active = True
+score = 0
+high_score = 0
+score_sound_cd = 100
+paused = False
+game_over = False
+
+main_surface = p.image.load('assets/D.png').convert()
+main_surface = p.transform.scale2x(main_surface)
+bg_surface = p.image.load('assets/background-day.png').convert()
+bg_surface = p.transform.scale2x(bg_surface)
+floor_surface = p.image.load('assets/base.png').convert()
+floor_surface = p.transform.scale2x(floor_surface)
+floor_x_pos = 0
+
+bird_downflap = p.transform.scale2x(p.image.load('assets/bluebird-downflap.png').convert_alpha())
+bird_midflap = p.transform.scale2x(p.image.load('assets/bluebird-midflap.png').convert_alpha())
+bird_upflap = p.transform.scale2x(p.image.load('assets/bluebird-upflap.png').convert_alpha())
+bird_frames = [bird_downflap, bird_midflap, bird_upflap]
+bird_index = 0
+bird_surface = bird_frames[bird_index]
+bird_rect = bird_surface.get_rect(center=(50, 265))
+
+pipe_surface = p.image.load('assets/pipe-green.png').convert()
+pipe_surface = p.transform.scale2x(pipe_surface)
+pipe_list = []
+
+game_over_screen = p.image.load('assets/gameover.png').convert_alpha()
+game_over_rect = game_over_screen.get_rect(center=(238, 300))
+
+flap_sound = p.mixer.Sound('sound/sfx_wing.wav')
+death_sound = p.mixer.Sound('sound/sfx_hit.wav')
+score_sound = p.mixer.Sound('sound/sfx_point.wav')
 
 
 # flappy Bird functions
@@ -47,7 +96,7 @@ def check_collisions(pipes):
 
 
 def rotate_bird(bird):
-    new_bird = p.transform.rotozoom(bird, -bird_move * 3, 1)
+    new_bird = p.transform.rotozoom(bird, -bird_move * 2, 1)
     return new_bird
 
 
@@ -84,129 +133,65 @@ def update_score(score, high_score):
     return high_score
 
 
-def pause(game_state, x):
-    paused = True
-    if x == 1:
-        while paused:
-            for event in p.event.get():
-                if event.type == p.QUIT:
-                    p.quit()
-                    quit()
-                if event.type == p.KEYDOWN:
-                    if event.key == p.K_c:
-                        paused = False
-                    elif event.key == p.K_q:
-                        p.quit()
-                        quit()
-            if game_state == 'paused':
-                pause_surface = game_font.render(str('PAUSED!!'), True, (0, 0, 0))
-                pause_rect = pause_surface.get_rect(center=(238, 200))
-                screen.blit(pause_surface, pause_rect)
-                pause_surface_1 = game_font.render(str('Press C to continue'), True, (0, 0, 0))
-                pause_rect_1 = pause_surface_1.get_rect(center=(238, 300))
-                screen.blit(pause_surface_1, pause_rect_1)
-                pause_surface_2 = game_font.render(str('Press Q to Quit'), True, (0, 0, 0))
-                pause_rect_2 = pause_surface_2.get_rect(center=(238, 400))
-                screen.blit(pause_surface_2, pause_rect_2)
-                p.display.update()
-                clock.tick(50)
-    if x == 2:
-        paused = True
-        while paused:
-            for event in p.event.get():
-                if event.type == p.QUIT:
-                    p.quit()
-                    quit()
-                if event.type == p.KEYDOWN:
-                    if event.key == p.K_c:
-                        paused = False
-                    elif event.key == p.K_q:
-                        p.quit()
-                        quit()
-            if game_state == 'paused':
-                pause_surface = pause_font.render(str('PAUSED!!'), True, (255, 255, 255))
-                window.blit(pause_surface, (280, 110))
-                pause_surface_1 = pause_font.render(str('Press C to continue'), True, (255, 255, 255))
-                window.blit(pause_surface_1, (205, 210))
-                pause_surface_2 = pause_font.render(str('Press Q to Quit'), True, (255, 255, 255))
-                window.blit(pause_surface_2, (245, 310))
-                p.display.update()
+# ---------------SPACE INVADER ------------------ #
 
-    if x == 3:
-        paused = True
-        while paused:
-            for event in p.event.get():
-                if event.type == p.QUIT:
-                    p.quit()
-                    quit()
-                if event.type == p.KEYDOWN:
-                    if event.key == p.K_c:
-                        paused = False
-                    elif event.key == p.K_q:
-                        p.quit()
-                        quit()
-            if game_state == 'paused':
-                pause_surface = pause_font.render(str('PAUSED!!'), True, (0, 0, 0))
-                window.blit(pause_surface, (240, 130))
-                pause_surface_1 = pause_font.render(str('Press C to continue'), True, (0, 0, 0))
-                window.blit(pause_surface_1, (155, 230))
-                pause_surface_2 = pause_font.render(str('Press Q to Quit'), True, (0, 0, 0))
-                window.blit(pause_surface_2, (185, 330))
-                p.display.update()
-                clock.tick(50)
+# VARIABLES
 
 
-# flappy bird functions finished
+# game active variable
+i_game_active = True
+in_game = True
+over = False
+i_enemies = True
 
 
-p.mixer.pre_init(frequency=44100, size=16, channels=1, buffer=512)
-p.init()
 
-main_screen = p.display.set_mode((500, 500))
-p.display.set_caption("X-GAMER!")
-clock = p.time.Clock()
-game_font = p.font.Font('04B_19.ttf', 30)
+# player spaceship
+player_img = p.image.load('assets/space-ship1.png')
+player_imgX = 318
+player_imgY = 400
+player_imgX_change = 0
 
-# variables
-gravity = 0.25
-bird_move = 0
-game_active = True
-score = 0
-high_score = 0
-score_sound_cd = 100
-paused = False
-game_over = False
+# enemy spaceships
+enemy_img = []
+enemy_imgX = []
+enemy_imgY = []
+enemy_imgX_change = []
+enemy_imgY_change = []
+enemies = 4
+for i in range(enemies):
+    enemy_img.append(p.image.load('assets/ufo.png'))
+    enemy_imgX.append(random.randint(0, 636))
+    enemy_imgY.append(random.randint(40, 200))
+    enemy_imgX_change.append(2.5)
+    enemy_imgY_change.append(50)
 
-main_surface = p.image.load('assets/D.png').convert()
-main_surface = p.transform.scale2x(main_surface)
-bg_surface = p.image.load('assets/background-day.png').convert()
-bg_surface = p.transform.scale2x(bg_surface)
-floor_surface = p.image.load('assets/base.png').convert()
-floor_surface = p.transform.scale2x(floor_surface)
-floor_x_pos = 0
+# bullet
+bullet_img = p.image.load('assets/bullet_1.png')
+bullet_imgX = 318
+bullet_imgY = 400
+bullet_imgX_change = 0
+bullet_imgY_change = -4
+bullet_state = "ready"
 
-bird_downflap = p.transform.scale2x(p.image.load('assets/bluebird-downflap.png').convert_alpha())
-bird_midflap = p.transform.scale2x(p.image.load('assets/bluebird-midflap.png').convert_alpha())
-bird_upflap = p.transform.scale2x(p.image.load('assets/bluebird-upflap.png').convert_alpha())
-bird_frames = [bird_downflap, bird_midflap, bird_upflap]
-bird_index = 0
-bird_surface = bird_frames[bird_index]
-bird_rect = bird_surface.get_rect(center=(50, 265))
+# score
+score_val = 0
+font = p.font.Font("04B_19.ttf", 20)
+scoreX = 10
+scoreY = 10
 
-pipe_surface = p.image.load('assets/pipe-green.png').convert()
-pipe_surface = p.transform.scale2x(pipe_surface)
-pipe_list = []
+# high score
+high_score_val = 0
+font_1 = p.font.Font("04B_19.ttf", 20)
+high_scoreX = 545
+high_scoreY = 10
 
-game_over_screen = p.image.load('assets/gameover.png').convert_alpha()
-game_over_rect = game_over_screen.get_rect(center=(238, 300))
+# game over
+game_over_font = p.font.Font("04B_19.ttf", 32)
+game_overX = 250
+game_overY = 200
 
-flap_sound = p.mixer.Sound('sound/sfx_wing.wav')
-death_sound = p.mixer.Sound('sound/sfx_hit.wav')
-score_sound = p.mixer.Sound('sound/sfx_point.wav')
-
-
-# space invader functions
-
+# FUNCTIONS
 
 def player(x, y):
     window.blit(player_img, (int(x), int(y)))
@@ -261,61 +246,6 @@ def i_replay():
 # space invader function finished
 
 
-# space invader variable
-
-
-# game active variable
-i_game_active = True
-in_game = True
-over = False
-i_enemies = True
-# background image
-
-
-# player spaceship
-player_img = p.image.load('assets/space-ship1.png')
-player_imgX = 318
-player_imgY = 400
-player_imgX_change = 0
-
-# enemy spaceships
-enemy_img = []
-enemy_imgX = []
-enemy_imgY = []
-enemy_imgX_change = []
-enemy_imgY_change = []
-enemies = 4
-for i in range(enemies):
-    enemy_img.append(p.image.load('assets/ufo.png'))
-    enemy_imgX.append(random.randint(0, 636))
-    enemy_imgY.append(random.randint(40, 200))
-    enemy_imgX_change.append(2.5)
-    enemy_imgY_change.append(50)
-
-# bullet
-bullet_img = p.image.load('assets/bullet_1.png')
-bullet_imgX = 318
-bullet_imgY = 400
-bullet_imgX_change = 0
-bullet_imgY_change = -4
-bullet_state = "ready"
-
-# score
-score_val = 0
-font = p.font.Font("04B_19.ttf", 20)
-scoreX = 10
-scoreY = 10
-
-# high score
-high_score_val = 0
-font_1 = p.font.Font("04B_19.ttf", 20)
-high_scoreX = 545
-high_scoreY = 10
-
-# game over
-game_over_font = p.font.Font("04B_19.ttf", 32)
-game_overX = 250
-game_overY = 200
 
 # pause variables
 pause_font = p.font.Font("04B_19.ttf", 32)
@@ -323,12 +253,15 @@ main_font = p.font.Font("04B_19.ttf", 32)
 replay_font = p.font.Font("04B_19.ttf", 32)
 # space invaders variables finished
 
-# mamba trail
+#------------------MAMBA TRAIL --------------------
+
+
 # cell variables
 m_cell_size = 25
 m_cell_num = 25
 # game_active
 m_game_active = True
+m_game_over = False
 g_over = False
 m_font = p.font.Font('04B_19.ttf', 30)
 
@@ -345,6 +278,8 @@ m_direction = (1, 0)
 m_high_score_val = 0
 
 
+# FUNCTIONS
+
 def draw_fruit():
     m_fruit_rect = p.Rect(int(m_cell_x * m_cell_size), int(m_cell_y * m_cell_size), m_cell_size, m_cell_size)
     p.draw.rect(window, (238, 130, 238), m_fruit_rect) #(surface,color,rect to be placed)
@@ -357,13 +292,17 @@ def draw_snake():
         p.draw.rect(window, (219, 112, 147), m_snake_rect)
         p.draw.rect(window, (0, 0, 0), m_snake_rect, 2)
 
-
+m_wall_collision = mixer.Sound('sound/mixkit-falling-hit-on-gravel-756.wav')
 def m_collision():
     if not 0 <= m_snake_position[0].y < m_cell_num or not 0 <= m_snake_position[0].x < m_cell_num:
+        m_wall_collision.play(0)
+        p.time.wait(int(m_wall_collision.get_length() * 1000))
         return False
 
     for i in m_snake_position[1:]:
         if i == m_snake_position[0]:
+            m_wall_collision.play(0)
+            p.time.wait(int(m_wall_collision.get_length() * 1000))
             return False
 
     return True
@@ -389,6 +328,141 @@ def m_high_score(m_high_score_val):
     window.blit(m_high_score_surface, (20, 30))
 
 
+# COMMON FUNCTIONS
+
+def pause(game_state, x):
+    paused = True
+    if x == 1:
+        while paused:
+            for event in p.event.get():
+                if event.type == p.QUIT:
+                    p.quit()
+                    quit()
+                if event.type == p.KEYDOWN:
+                    if event.key == p.K_c:
+                        paused = False
+                    elif event.key == p.K_q:
+                        p.quit()
+                        quit()
+            if game_state == 'paused':
+                pause_surface = game_font.render(str('PAUSED!!'), True, (0, 0, 0))
+                pause_rect = pause_surface.get_rect(center=(238, 200))
+                screen.blit(pause_surface, pause_rect)
+                pause_surface_1 = game_font.render(str('PRESS C TO CONTINUE'), True, (0, 0, 0))
+                pause_rect_1 = pause_surface_1.get_rect(center=(238, 300))
+                screen.blit(pause_surface_1, pause_rect_1)
+                pause_surface_2 = game_font.render(str('PRESS Q TO QUIT'), True, (0, 0, 0))
+                pause_rect_2 = pause_surface_2.get_rect(center=(238, 400))
+                screen.blit(pause_surface_2, pause_rect_2)
+                p.display.update()
+                clock.tick(50)
+    if x == 2:
+        paused = True
+        while paused:
+            for event in p.event.get():
+                if event.type == p.QUIT:
+                    p.quit()
+                    quit()
+                if event.type == p.KEYDOWN:
+                    if event.key == p.K_c:
+                        paused = False
+                    elif event.key == p.K_q:
+                        p.quit()
+                        quit()
+            if game_state == 'paused':
+                pause_surface = pause_font.render(str('PAUSED!!'), True, (255, 255, 255))
+
+                window.blit(pause_surface, (280, 110))
+                pause_surface_1 = pause_font.render(str('PRESS C TO CONTINUE'), True, (255, 255, 255))
+                window.blit(pause_surface_1, (205, 210))
+                pause_surface_2 = pause_font.render(str('PRESS Q TO QUIT'), True, (255, 255, 255))
+                window.blit(pause_surface_2, (245, 310))
+                p.display.update()
+
+    if x == 3:
+        paused = True
+        while paused:
+            for event in p.event.get():
+                if event.type == p.QUIT:
+                    p.quit()
+                    quit()
+                if event.type == p.KEYDOWN:
+                    if event.key == p.K_c:
+                        paused = False
+                    elif event.key == p.K_q:
+                        p.quit()
+                        quit()
+            if game_state == 'paused':
+                pause_surface = pause_font.render(str('PAUSED!!'), True, (0, 0, 0))
+                window.blit(pause_surface, (240, 130))
+                pause_surface_1 = pause_font.render(str('PRESS C TO CONTINUE'), True, (0, 0, 0))
+                window.blit(pause_surface_1, (155, 230))
+                pause_surface_2 = pause_font.render(str('PRESS Q TO QUIT'), True, (0, 0, 0))
+                window.blit(pause_surface_2, (185, 330))
+                p.display.update()
+                clock.tick(50)
+
+
+
+
+def loading(screen, x, y, id):
+    i_load_img = p.image.load('assets/load_bck.jpg')
+    i_bg_imageX = 0
+    i_bg_imageY = 0
+    screen.blit(i_load_img, (i_bg_imageX, i_bg_imageY))
+    p.display.update()
+
+
+    m_load_pause = m_font.render(str('PRESS P TO PAUSE GAME!!'), True, (255, 110 , 110))
+    m_load_pause_rect = m_load_pause.get_rect(center=(x/2, (3*y)/5))
+    if id==1:
+        m_load_dir = m_font.render(str('PRESS SPACE TO FLY BIRD!!'), True, (250, 250, 70))
+        m_load_dir_rect = m_load_dir.get_rect(center=(x/2, (4*y)/5))
+    if id==2:
+        m_load_dir = m_font.render(str('PRESS SPACE TO SHOOT!!'), True, (250, 250, 70))
+        m_load_dir_rect = m_load_dir.get_rect(center=(x / 2, (4*y) / 5))
+
+    if id==3:
+        m_load_dir = m_font.render(str('PRESS ARROW KEYS TO MOVE SNAKE!!'), True, (250, 250, 70))
+        m_load_dir_rect = m_load_dir.get_rect(center=(x / 2, (4*y) / 5))
+
+    m_load = m_font.render(str('3'), True, (35, 250, 200))
+    m_load_rect = m_load.get_rect(center=(x/2,(y)/5))
+    screen.blit(m_load, m_load_rect)
+    screen.blit(m_load_pause, m_load_pause_rect)
+    screen.blit(m_load_dir, m_load_dir_rect)
+    p.display.update()
+    time.sleep(1)
+
+
+    screen = p.display.set_mode((x,y))
+    i_load_img = p.image.load('assets/load_bck.jpg')
+    screen.blit(i_load_img, (i_bg_imageX, i_bg_imageX))
+    p.display.update()
+
+    m_load = m_font.render(str('2'), True, (35, 250, 200))
+    m_load_rect = m_load.get_rect(center=(x / 2, ( y) / 5))
+    screen.blit(m_load, m_load_rect)
+    screen.blit(m_load_pause, m_load_pause_rect)
+    screen.blit(m_load_dir, m_load_dir_rect)
+    p.display.update()
+    time.sleep(1)
+
+    screen = p.display.set_mode((x,y))
+    screen.blit(i_load_img, (i_bg_imageX, i_bg_imageX))
+    p.display.update()
+
+    m_load = m_font.render(str('1'), True, (35, 250, 200))
+    m_load_rect = m_load.get_rect(center=(x / 2, (y) / 5))
+    screen.blit(m_load, m_load_rect)
+    screen.blit(m_load_pause, m_load_pause_rect)
+    screen.blit(m_load_dir, m_load_dir_rect)
+    p.display.update()
+    time.sleep(2)
+
+
+#MAIN CODE
+
 while True:
     for main_event in p.event.get():
         if main_event.type == p.QUIT:
@@ -400,11 +474,14 @@ while True:
                 p.display.set_caption("Flappy Bird!")
                 f_icon_img = p.image.load('assets/flappy-bird-icon.png')  # icon of the game window
                 p.display.set_icon(f_icon_img)
+
+                loading(screen, 476, 684,1)
                 SPAWNPIPE = p.USEREVENT
                 p.time.set_timer(SPAWNPIPE, 1100)
                 BIRDFLAP = p.USEREVENT + 1
                 p.time.set_timer(BIRDFLAP, 300)
                 pipe_height = [280, 400, 350, 450]
+
                 while not game_over:
                     for event in p.event.get():
                         if event.type == p.QUIT:
@@ -421,8 +498,8 @@ while True:
                                 bird_move = 0
                                 bird_rect.center = (50, 265)
                                 score = 0
-                            if event.key == p.K_z:
-                                pause('paused', 1)
+                            if event.key == p.K_p:
+                                pause('paused', 1)              #Z
 
                             if event.key == p.K_m and game_active == False:
                                 game_over = True
@@ -477,8 +554,11 @@ while True:
                 p.display.set_icon(icon_img)
                 mixer.music.load('sound/background-audio.wav')
                 mixer.music.play()
+
                 p.mixer.music.set_volume(100)
                 i_clock = p.time.Clock()
+
+                loading(window,700, 500,2)
 
                 run = True
                 while run:
@@ -513,8 +593,8 @@ while True:
                                     bullet_sound.play()
                                     bullet_state = "fire"
                                     bullet_imgX = player_imgX
-                                if event.key == p.K_z:
-                                    pause('paused', 2)
+                                if event.key == p.K_p:
+                                    pause('paused', 2) #P
 
                             if event.type == p.KEYUP:
                                 if event.key == p.K_LEFT or event.key == p.K_RIGHT:
@@ -602,17 +682,22 @@ while True:
                 m_icon_img = p.image.load('assets/snake_icon.jpeg')  # icon of the game window
                 p.display.set_icon(m_icon_img)
                 m_snake_clock = p.time.Clock()
+                loading(window,m_cell_num * m_cell_size,m_cell_num * m_cell_size,3)
                 SCREEN_UPDATE =p.USEREVENT
+                window.fill((85, 107, 47))
                 p.time.set_timer(SCREEN_UPDATE, 100)
+                m_game_over = False
+                m_game_active = True
+                running = True
 
                 run = True
                 while run:
-                    window.fill((85, 107, 47))
                     for event in p.event.get():
                         if event.type == p.QUIT:
                             run = False
 
-                        if event.type == p.USEREVENT and m_game_active:
+                        if event.type == p.USEREVENT and running:
+                            window.fill((85, 107, 47))
                             m_snake_position_copy = m_snake_position[:-1]#slicing and eliminating last element
                             m_snake_position_copy.insert(0, m_snake_position_copy[0] + m_direction) #(index,value)
                             m_snake_position = m_snake_position_copy[:]
@@ -629,9 +714,10 @@ while True:
                             if event.key == p.K_RIGHT:
                                 if m_direction[0] != -1:
                                     m_direction = (+1, 0)
-                            if event.key == p.K_z:
-                                pause('paused', 3)
-                            if event.key == p.K_r and m_game_active == False:
+                            if event.key == p.K_p:
+                                pause('paused', 3) #P
+                            if event.key == p.K_r and m_game_over == True:
+                                print("xyz")
                                 m_cell_x = random.randint(0, m_cell_num - 1)
                                 m_cell_y = random.randint(0, m_cell_num - 1)
                                 m_cell_position = p.math.Vector2(m_cell_x, m_cell_y)
@@ -642,11 +728,16 @@ while True:
                                     m_cell_x = random.randint(0, m_cell_num - 1)
                                     m_cell_y = random.randint(0, m_cell_num - 1)
                                     m_cell_position = p.math.Vector2(m_cell_x, m_cell_y)
-                            if event.key == p.K_q and m_game_active == False:
+                                m_game_active = True
+                                m_game_over = False
+                                running = True
+                                window.fill((85, 107, 47))
+                            if event.key == p.K_q and m_game_over == True:
                                 p.quit()
                                 sys.exit()
-                            if event.key == p.K_m and m_game_active == False:
+                            if event.key == p.K_m and m_game_over == True:
                                 run = False
+                                running = False
                                 m_game_active = False
                                 m_cell_x = random.randint(0, m_cell_num - 1)
                                 m_cell_y = random.randint(0, m_cell_num - 1)
@@ -660,38 +751,47 @@ while True:
                                     m_cell_position = p.math.Vector2(m_cell_x, m_cell_y)
                                 break
 
-                    m_game_active = m_collision()
-                    if m_game_active:
-                        draw_fruit()
-                        draw_snake()
-                        m_score()
-                        m_high_score_val = update(m_score_val, m_high_score_val)
-                        # m_high_score(m_high_score_val)
-                        if m_cell_position == m_snake_position[0]:
-                            # the fruit changes its position
-                            m_cell_x = random.randint(0, m_cell_num - 1)
-                            m_cell_y = random.randint(0, m_cell_num - 1)
-                            m_cell_position = p.math.Vector2(m_cell_x, m_cell_y)
-                            # the length of the snake increases.
-                            m_snake_position_copy = m_snake_position[:]
-                            m_snake_position_copy.insert(0, m_snake_position_copy[0] + m_direction)
-                            m_snake_position = m_snake_position_copy[:]
-                            # the sound
-                            m_fruit_collision = mixer.Sound('sound/collision-sound.wav')
-                            m_fruit_collision.play()
-                    else:
-                        m_over_surface = m_font.render(str('GAME OVER!'), True, (0, 0, 0))
-                        window.blit(m_over_surface, (240, 100))
-                        m_over_surface_1 = m_font.render(str('PRESS \'R\' TO RESTART.'), True, (0, 0, 0))
-                        window.blit(m_over_surface_1, (170, 250))
-                        m_over_surface_2 = m_font.render(str('PRESS \'Q\' TO QUIT.'), True, (0, 0, 0))
-                        window.blit(m_over_surface_2, (170, 350))
-                        m_over_surface_3 = m_font.render(str('PRESS \'M\' FOR MAIN MENU.'), True, (0, 0, 0))
-                        window.blit(m_over_surface_3, (170, 450))
-                        update(m_score_val, m_high_score_val)
-                        m_score()
-                        m_high_score(m_high_score_val)
-                        p.display.update()
+                    if running :
+                        if m_game_active:
+                            draw_fruit()
+                            draw_snake()
+                            m_score()
+                            m_high_score_val = update(m_score_val, m_high_score_val)
+                            # m_high_score(m_high_score_val)
+                            if m_cell_position == m_snake_position[0]:
+                                # the fruit changes its position
+                                m_cell_x = random.randint(0, m_cell_num - 1)
+                                m_cell_y = random.randint(0, m_cell_num - 1)
+                                m_cell_position = p.math.Vector2(m_cell_x, m_cell_y)
+                                # the length of the snake increases.
+                                m_snake_position_copy = m_snake_position[:]
+                                m_snake_position_copy.insert(0, m_snake_position_copy[0] + m_direction)
+                                m_snake_position = m_snake_position_copy[:]
+                                # the sound
+                                m_fruit_collision = mixer.Sound('sound/collision-sound.wav')
+                                m_fruit_collision.play()
+                            else:
+                                m_game_active= m_collision()
+                                m_game_over = not(m_game_active)
+
+                        if m_game_over:
+                            #fill window and display sound
+                            window.fill((85, 107, 47))
+                            print("Hi")
+                            m_over_surface = m_font.render(str('GAME OVER!'), True, (0, 0, 0))
+                            window.blit(m_over_surface, (240, 100))
+                            m_over_surface_1 = m_font.render(str('PRESS \'R\' TO RESTART.'), True, (0, 0, 0))
+                            window.blit(m_over_surface_1, (170, 250))
+                            m_over_surface_2 = m_font.render(str('PRESS \'Q\' TO QUIT.'), True, (0, 0, 0))
+                            window.blit(m_over_surface_2, (170, 350))
+                            m_over_surface_3 = m_font.render(str('PRESS \'M\' FOR MAIN MENU.'), True, (0, 0, 0))
+                            window.blit(m_over_surface_3, (170, 450))
+                            update(m_score_val, m_high_score_val)
+                            m_score()
+                            m_high_score(m_high_score_val)
+                            p.display.update()
+                            running= False
+                            m_game_over= True
 
                     p.display.update()
                     m_snake_clock.tick(70)
